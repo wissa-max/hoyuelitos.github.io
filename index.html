@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <title>Cubo Musical 3D</title>
+  <style>
+    * { 
+      margin: 0; 
+      padding: 0; 
+      box-sizing: border-box; 
+      -webkit-tap-highlight-color: transparent;
+      -webkit-touch-callout: none;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      touch-action: none;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #000 url('assets/fondo.jpg') no-repeat center center;
+      background-size: cover;
+    }
+
+    .scene {
+      position: absolute;
+      perspective: 1000px;
+      width: 85vmin;
+      height: 85vmin;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 2;
+    }
+
+    .cube {
+      width: 100%;
+      height: 100%;
+      transform-style: preserve-3d;
+      transition: transform 0.1s linear;
+      transform: scale(0.65) rotateX(-15deg) rotateY(15deg);
+      will-change: transform;
+    }
+
+    .face {
+      position: absolute;
+      width: 100%;
+      height: 100%;
+      background-size: cover;
+      background-position: center;
+      background-repeat: no-repeat;
+      border: 3px solid rgba(255, 255, 255, 0.7);
+      box-shadow: 0 0 15px rgba(255, 105, 180, 0.8),
+                  0 0 30px rgba(255, 105, 180, 0.6),
+                  0 0 45px rgba(255, 105, 180, 0.4);
+      animation: borderPulse 1.2s infinite alternate;
+      backface-visibility: visible;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .face-title {
+      position: absolute;
+      bottom: 15%;
+      color: black;
+      font-size: 4vmin;
+      font-weight: bold;
+      text-shadow: 0 0 5px rgba(255, 255, 255, 0.9),
+                   0 0 10px rgba(255, 255, 255, 0.7);
+      background-color: rgba(255, 255, 255, 0.7);
+      padding: 1vmin 3vmin;
+      border-radius: 2vmin;
+      border: 1px solid rgba(0, 0, 0, 0.3);
+      transform: translateZ(10px);
+    }
+
+    @keyframes borderPulse {
+      0% {
+        border-color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 20px rgba(255, 105, 180, 0.9),
+                    0 0 40px rgba(255, 105, 180, 0.7),
+                    0 0 60px rgba(255, 105, 180, 0.5);
+      }
+      50% {
+        border-color: rgba(255, 192, 203, 0.8);
+        box-shadow: 0 0 15px rgba(255, 255, 255, 0.8),
+                    0 0 30px rgba(255, 105, 180, 0.6),
+                    0 0 45px rgba(255, 105, 180, 0.4);
+      }
+      100% {
+        border-color: rgba(255, 255, 255, 0.9);
+        box-shadow: 0 0 10px rgba(255, 105, 180, 0.9),
+                    0 0 20px rgba(255, 105, 180, 0.7),
+                    0 0 30px rgba(255, 105, 180, 0.5);
+      }
+    }
+
+    .front  { transform: translateZ(42.5vmin); }
+    .back   { transform: rotateY(180deg) translateZ(42.5vmin); }
+    .right  { transform: rotateY(90deg) translateZ(42.5vmin); }
+    .left   { transform: rotateY(-90deg) translateZ(42.5vmin); }
+    .top    { transform: rotateX(90deg) translateZ(42.5vmin); }
+    .bottom { transform: rotateX(-90deg) translateZ(42.5vmin); }
+
+    .rain-symbol {
+      position: absolute;
+      top: -50px;
+      font-size: 4.5vmin;
+      color: rgba(255, 255, 255, 0.7);
+      text-shadow: 0 0 5px rgba(255, 105, 180, 0.7);
+      z-index: 1;
+      animation: fall linear forwards;
+      pointer-events: none;
+      will-change: transform;
+    }
+
+    @keyframes fall {
+      to {
+        transform: translateY(120vh);
+        opacity: 0;
+      }
+    }
+
+    #audioPlayer {
+      position: fixed;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 95%;
+      max-width: 320px;
+      z-index: 10;
+      background-color: rgba(20, 20, 20, 0.8);
+      border-radius: 12px;
+      padding: 8px;
+      border: 1px solid rgba(255, 105, 180, 0.5);
+      box-shadow: 0 0 10px rgba(255, 105, 180, 0.5);
+    }
+
+    /* Ajustes para pantallas muy pequeñas */
+    @media (max-height: 600px) {
+      .scene {
+        width: 75vmin;
+        height: 75vmin;
+      }
+      
+      #audioPlayer {
+        bottom: 5px;
+        padding: 6px;
+        max-width: 280px;
+      }
+
+      .face-title {
+        font-size: 3.5vmin;
+        bottom: 10%;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="scene">
+    <div class="cube" id="cube">
+      <div class="face front"  data-index="0" style="background-image: url('assets/cara1.jpg')">
+        <div class="face-title">Camilo y Evaluna - Te soñe</div>
+      </div>
+      <div class="face back"   data-index="1" style="background-image: url('assets/cara2.jpg')">
+        <div class="face-title">Camilo y Evaluna -Por Primera Vez</div>
+      </div>
+      <div class="face right"  data-index="2" style="background-image: url('assets/cara3.jpg')">
+        <div class="face-title">Camilo y Evaluna - Japonesa </div>
+      </div>
+      <div class="face left"   data-index="3" style="background-image: url('assets/cara4.jpg')">
+        <div class="face-title">Reik - Pero te conoci</div>
+      </div>
+      <div class="face top"    data-index="4" style="background-image: url('assets/cara5.jpg')">
+        <div class="face-title">CNCO - Para enamorarte </div>
+      </div>
+      <div class="face bottom" data-index="5" style="background-image: url('assets/cara6.jpg')">
+        <div class="face-title">Mike Bahia - Quedate Aqui </div>
+      </div>
+    </div>
+  </div>
+
+  <audio id="audioPlayer" controls preload="auto" x-webkit-airplay="allow"></audio>
+
+  <script>
+    // Detección de móvil
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+    const cube = document.getElementById('cube');
+    const audio = document.getElementById('audioPlayer');
+    const faces = document.querySelectorAll('.face');
+    const symbols = ["|-/", "ψ", "tΦp", "Ø"];
+    const canciones = [
+      "assets/cancion1.mp3",
+      "assets/cancion2.mp3",
+      "assets/cancion3.mp3",
+      "assets/cancion4.mp3",
+      "assets/cancion5.mp3",
+      "assets/cancion6.mp3"
+    ];
+
+    // Configuración inicial
+    let rotateX = -15;
+    let rotateY = 15;
+    let startX, startY, isDragging = false;
+    let lluviaInterval = null;
+    let currentSongIndex = -1;
+    let lastTapTime = 0;
+    let tapCount = 0;
+    let isPaused = false;
+
+    function updateRotation() {
+      cube.style.transform = `scale(0.65) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+    }
+
+    // Control táctil para móviles
+    function handleStart(x, y) {
+      isDragging = true;
+      startX = x;
+      startY = y;
+      cube.style.transition = 'none';
+    }
+
+    function handleMove(x, y) {
+      if (!isDragging) return;
+      
+      const sensitivity = 0.8;
+      rotateY += (x - startX) * sensitivity;
+      rotateX -= (y - startY) * sensitivity;
+      
+      startX = x;
+      startY = y;
+      updateRotation();
+    }
+
+    function handleEnd() {
+      isDragging = false;
+      cube.style.transition = 'transform 0.1s linear';
+    }
+
+    // Eventos táctiles
+    document.addEventListener('touchstart', e => {
+      e.preventDefault();
+      handleStart(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    
+    document.addEventListener('touchmove', e => {
+      e.preventDefault();
+      handleMove(e.touches[0].clientX, e.touches[0].clientY);
+    }, { passive: false });
+    
+    document.addEventListener('touchend', e => {
+      e.preventDefault();
+      handleEnd();
+    });
+
+    // También soporte para ratón
+    document.addEventListener('mousedown', e => {
+      e.preventDefault();
+      handleStart(e.clientX, e.clientY);
+    });
+    
+    document.addEventListener('mousemove', e => {
+      e.preventDefault();
+      handleMove(e.clientX, e.clientY);
+    });
+    
+    document.addEventListener('mouseup', e => {
+      e.preventDefault();
+      handleEnd();
+    });
+
+    // Efecto de lluvia optimizado para móviles
+    function crearSimbolo() {
+      const el = document.createElement('div');
+      el.className = 'rain-symbol';
+      el.innerText = symbols[Math.floor(Math.random() * symbols.length)];
+      el.style.left = Math.random() * 100 + 'vw';
+      el.style.animationDuration = (3 + Math.random() * 4) + 's';
+      document.body.appendChild(el);
+      
+      // Limpieza de elementos
+      setTimeout(() => {
+        if (el.parentNode) {
+          el.parentNode.removeChild(el);
+        }
+      }, 7000);
+    }
+
+    function iniciarLluvia() {
+      clearInterval(lluviaInterval);
+      lluviaInterval = setInterval(crearSimbolo, 400);
+    }
+
+    function detenerLluvia() {
+      clearInterval(lluviaInterval);
+      lluviaInterval = null;
+    }
+
+    // Control de música mejorado
+    function reproducirCancion(index) {
+      if (currentSongIndex !== index) {
+        // Nueva canción seleccionada
+        currentSongIndex = index;
+        audio.src = canciones[index];
+        audio.currentTime = 0;
+        isPaused = false;
+        
+        const playPromise = audio.play();
+        
+        if (playPromise !== undefined) {
+          playPromise.catch(error => {
+            // Se eliminó el alert que mostraba el mensaje
+          }).then(() => {
+            iniciarLluvia();
+          });
+        } else {
+          iniciarLluvia();
+        }
+      } else {
+        // Misma canción, manejar play/pause
+        if (audio.paused) {
+          audio.play();
+          isPaused = false;
+          iniciarLluvia();
+        } else {
+          audio.pause();
+          isPaused = true;
+          detenerLluvia();
+        }
+      }
+    }
+
+    function reanudarCancion() {
+      if (currentSongIndex !== -1) {
+        if (isPaused || audio.paused) {
+          audio.play();
+          isPaused = false;
+          iniciarLluvia();
+        } else {
+          // Si ya está sonando, reiniciar
+          audio.currentTime = 0;
+          audio.play();
+          iniciarLluvia();
+        }
+      }
+    }
+
+    audio.addEventListener('ended', () => {
+      detenerLluvia();
+      const siguiente = (currentSongIndex + 1) % canciones.length;
+      setTimeout(() => reproducirCancion(siguiente), 500);
+    });
+
+    // Control táctil para caras del cubo
+    faces.forEach((face, index) => {
+      face.addEventListener('click', () => handleFaceTap(index));
+      face.addEventListener('touchend', (e) => {
+        e.preventDefault();
+        handleFaceTap(index);
+      });
+    });
+
+    function handleFaceTap(index) {
+      const now = Date.now();
+      const doubleTapDelay = 300;
+      
+      if (now - lastTapTime < doubleTapDelay) {
+        // Doble tap - reanudar
+        tapCount = 0;
+        reanudarCancion();
+      } else {
+        // Tap simple - play/pause
+        tapCount++;
+        if (tapCount === 1) {
+          setTimeout(() => {
+            if (tapCount === 1) {
+              reproducirCancion(index);
+            }
+            tapCount = 0;
+          }, doubleTapDelay);
+        }
+      }
+      
+      lastTapTime = now;
+    }
+
+    // Solución para autoplay en iOS
+    document.body.addEventListener('touchstart', function initAudio() {
+      document.body.removeEventListener('touchstart', initAudio);
+    }, { once: true });
+
+    // Ajustar al cambiar tamaño (rotación en tablets)
+    window.addEventListener('resize', () => {
+      updateRotation();
+    });
+  </script>
+</body>
+</html>
